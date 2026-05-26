@@ -15,7 +15,12 @@ import {
   Moon,
   Info,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  User,
+  Settings,
+  Shield,
+  Zap,
+  Volume2
 } from 'lucide-react';
 import MacroSlider from '@/components/recovery/MacroSlider';
 import MobilityMap from '@/components/recovery/MobilityMap';
@@ -27,12 +32,16 @@ export default function AthleteRecoveryDashboard() {
   const [mockLoading, setMockLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
-  // Shared state for interactive sidebar sync
+  // Shared state for interactive sidebar & cockpit sync
   const [recoveryScore, setRecoveryScore] = useState(88);
   const [restingHr, setRestingHr] = useState(48);
   const [sleepHours, setSleepHours] = useState(8.2);
   const [hydrationLevel, setHydrationLevel] = useState(72);
   const [isSidebarGlowing, setIsSidebarGlowing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'recovery' | 'fuel' | 'cardio'>('recovery');
+
+  // Highlights to indicate AI-updated widgets
+  const [highlightWidget, setHighlightWidget] = useState<string | null>(null);
 
   const playHeartTone = (restingBpm = 48) => {
     try {
@@ -73,7 +82,7 @@ export default function AthleteRecoveryDashboard() {
     }
   } as any) as any;
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive in the chat dock
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, mockLoading]);
@@ -81,15 +90,15 @@ export default function AthleteRecoveryDashboard() {
   // List of pre-configured suggestions
   const suggestions = [
     {
-      label: "Leg Recovery",
+      label: "Leg Recovery Routine",
       prompt: "I am feeling severe soreness in my quadriceps and moderate stiffness in my lower back after a heavy leg workout today.",
     },
     {
-      label: "Hydration Plan",
+      label: "Hydration Metrics",
       prompt: "I just finished a 90 minute high sweat workout in 82 degree heat. Generate my hydration and sleep recovery metrics.",
     },
     {
-      label: "Cardio Zones",
+      label: "Cardio Recovery Zones",
       prompt: "What are my optimal aerobic heart rate recovery zones for Zone 1 and Zone 2? My resting HR is 48.",
     }
   ];
@@ -103,15 +112,12 @@ export default function AthleteRecoveryDashboard() {
         preventDefault: () => {},
       } as React.FormEvent<HTMLFormElement>;
       
-      // We manually build a submit or set input
       const inputElement = document.getElementById('chat-input') as HTMLInputElement;
       if (inputElement) {
         inputElement.value = promptText;
-        // Trigger manual synthetic change
         const changeEvent = { target: { value: promptText } } as React.ChangeEvent<HTMLInputElement>;
         handleInputChange(changeEvent);
         
-        // Wait a tiny fraction of a second for state synchronization
         setTimeout(() => {
           handleSubmit(fakeEvent);
         }, 50);
@@ -121,24 +127,26 @@ export default function AthleteRecoveryDashboard() {
 
   // Mock handler for immediate demonstration if API key is not present
   const triggerMockResponse = async (promptText: string) => {
-    // Add user message
     const userMsgId = Date.now().toString();
     const newUserMessage = { id: userMsgId, role: 'user' as const, content: promptText };
     
     setMessages((prev: any[]) => [...prev, newUserMessage]);
     setMockLoading(true);
 
-    // Simulate elite sports scientist thinking delay
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     const assistantMsgId = (Date.now() + 1).toString();
     let assistantMessage;
 
     if (promptText.toLowerCase().includes('quad') || promptText.toLowerCase().includes('back') || promptText.toLowerCase().includes('leg')) {
+      setActiveTab('recovery');
+      setHighlightWidget('mobility');
+      setTimeout(() => setHighlightWidget(null), 3000);
+      
       assistantMessage = {
         id: assistantMsgId,
         role: 'assistant' as const,
-        content: "Based on your reported localized soreness in the **Quadriceps** and **Lower Back**, I have formulated a targeted myofascial release and neuromuscular activation prescription. Heavy squat loads often trigger high tone in the rectus femoris and erector spinae. Execute these drills in order to downregulate sympathetic drive and accelerate local blood flow.",
+        content: "I have identified high muscle tension in your **Quadriceps** and **Lower Back**. I've updated the **Active Mobility Preview** in your center console with targeted myofascial foam rolling and decompressions. Check off each drill as you complete it to sync your Recovery Score.",
         toolInvocations: [
           {
             state: 'result' as const,
@@ -152,8 +160,7 @@ export default function AthleteRecoveryDashboard() {
                   soreness: 'severe',
                   prescriptions: [
                     'Targeted foam roll with high oscillation (3 sets x 45 seconds per side)',
-                    'Half-kneeling hip flexor stretch with slight pelvic posterior tilt (2m hold)',
-                    'Passive leg compression or high-resistance band distraction'
+                    'Half-kneeling hip flexor stretch with slight pelvic posterior tilt (2m hold)'
                   ],
                   durationMinutes: 12
                 },
@@ -163,8 +170,7 @@ export default function AthleteRecoveryDashboard() {
                   soreness: 'moderate',
                   prescriptions: [
                     'Prone cobra or sphinx pose breathing (5 slow diaphragmatic cycles)',
-                    'Supine lower back rotational twist (90 seconds per side)',
-                    'Hanging bar decompression with full body exhale'
+                    'Supine lower back rotational twist (90 seconds per side)'
                   ],
                   durationMinutes: 8
                 }
@@ -174,40 +180,15 @@ export default function AthleteRecoveryDashboard() {
           }
         ]
       };
-    } else if (promptText.toLowerCase().includes('calf') || promptText.toLowerCase().includes('cramp') || promptText.toLowerCase().includes('tight')) {
-      assistantMessage = {
-        id: assistantMsgId,
-        role: 'assistant' as const,
-        content: "High-intensity sprint repeats create high eccentric shear on the gastrocnemius and soleus complexes. Cramping suggests micro-tearing combined with electrolyte depletion. I've designed an active calf mobilization and trigger release routine to alleviate the hypertonicity and encourage recovery.",
-        toolInvocations: [
-          {
-            state: 'result' as const,
-            toolCallId: 'call-mob-2',
-            toolName: 'prescribe_mobility',
-            args: {
-              muscleGroups: [
-                {
-                  id: 'calves',
-                  name: 'Gastrocnemius & Soleus',
-                  soreness: 'severe',
-                  prescriptions: [
-                    'Lacrosse ball micro-trigger release on the lateral soleus insertion (2m each)',
-                    'Elevated heel calf stretch off step, holding deep stretch (3 sets x 60s)',
-                    'Slow ankle circles clockwise/counterclockwise (20 reps each)'
-                  ],
-                  durationMinutes: 10
-                }
-              ]
-            },
-            result: { status: 'success' }
-          }
-        ]
-      };
     } else if (promptText.toLowerCase().includes('hydration') || promptText.toLowerCase().includes('sweat') || promptText.toLowerCase().includes('heat')) {
+      setActiveTab('fuel');
+      setHighlightWidget('hydration');
+      setTimeout(() => setHighlightWidget(null), 3000);
+
       assistantMessage = {
         id: assistantMsgId,
         role: 'assistant' as const,
-        content: "High ambient temperatures significantly accelerate sweat rate and sodium excretion in elite decathletes, leading to accelerated muscle fatigue and potential cramping. I have initialized the fluid and sleep calculation model below to optimize your biological rehydration and recovery window.",
+        content: "High thermal strain detected. I have updated your **Hydration & Biometric Tuner** in the center panel for a 90-minute high sweat session. Use the 'Log Fluid Intake' button on the widget to immediately update your hydration level.",
         toolInvocations: [
           {
             state: 'result' as const,
@@ -223,10 +204,14 @@ export default function AthleteRecoveryDashboard() {
         ]
       };
     } else if (promptText.toLowerCase().includes('cardio') || promptText.toLowerCase().includes('heart') || promptText.toLowerCase().includes('zone')) {
+      setActiveTab('cardio');
+      setHighlightWidget('cardio');
+      setTimeout(() => setHighlightWidget(null), 3000);
+
       assistantMessage = {
         id: assistantMsgId,
         role: 'assistant' as const,
-        content: "I have calculated your target metabolic heart rate training zones based on your baseline resting heart rate of 48. Targeting Zone 1 (Active Recovery) and Zone 2 (Aerobic Endurance) will accelerate lactate clearance, stimulate parasympathetic nervous activation, and speed up glycogen restoration.",
+        content: "Calculated optimal cardiovascular zone metrics using the Karvonen formula. The **Cardio Zoning Controller** is now loaded with active recovery and endurance heart rate boundaries based on your resting HR of 48.",
         toolInvocations: [
           {
             state: 'result' as const,
@@ -242,11 +227,14 @@ export default function AthleteRecoveryDashboard() {
         ]
       };
     } else {
-      // Default to macro slider suggestion
+      setActiveTab('fuel');
+      setHighlightWidget('macros');
+      setTimeout(() => setHighlightWidget(null), 3000);
+
       assistantMessage = {
         id: assistantMsgId,
         role: 'assistant' as const,
-        content: "I have calculated your optimal macronutrient allocation for a **Peak Volume / Intensity** training block. At 82kg, your metabolic expenditure will demand heightened carbohydrate availability to maintain glycogen saturation, while keeping protein elevated to sustain muscle protein synthesis (MPS). Use the interactive model below to customize your protein bias.",
+        content: "I have calculated your optimal macronutrient allocation for a **Peak Volume / Intensity** training block. Use the **Fuel Recovery Model** slider in the center panel to adjust your protein/carb bias based on fatigue.",
         toolInvocations: [
           {
             state: 'result' as const,
@@ -273,7 +261,6 @@ export default function AthleteRecoveryDashboard() {
 
     if (useMock) {
       triggerMockResponse(input);
-      // Clear input
       const changeEvent = { target: { value: '' } } as React.ChangeEvent<HTMLInputElement>;
       handleInputChange(changeEvent);
     } else {
@@ -299,8 +286,8 @@ export default function AthleteRecoveryDashboard() {
           </div>
         </div>
 
-        {/* Mock/API Toggle Switch */}
-        <div className="flex items-center gap-3">
+        {/* Engine mode controller */}
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-neutral-900/60 border border-neutral-800 text-[10px] font-mono">
             <span className="text-neutral-500">ENGINE:</span>
             <button
@@ -315,10 +302,11 @@ export default function AthleteRecoveryDashboard() {
         </div>
       </header>
 
-      {/* Main Content Dashboard Layout */}
+      {/* Main Content Cockpit Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-        {/* Left Side Panel (Athlete profile and stats) - Col 4 */}
-        <aside className={`lg:col-span-4 bg-neutral-950/20 border-r border-neutral-900/60 p-6 flex flex-col gap-6 overflow-y-auto hidden lg:flex transition-all duration-300 ${
+        
+        {/* LEFT COLUMN: Profile & Bio-metrics (Col 3) */}
+        <aside className={`lg:col-span-3 bg-neutral-950/20 border-r border-neutral-900/60 p-5 flex flex-col gap-5 overflow-y-auto hidden lg:flex transition-all duration-300 ${
           isSidebarGlowing ? 'shadow-2xl shadow-cyan-500/15 border-r-cyan-500/30' : ''
         }`}>
           {/* Athlete Profile Card */}
@@ -345,71 +333,62 @@ export default function AthleteRecoveryDashboard() {
             </div>
           </div>
 
-          {/* Real-time Bio Stats Panel */}
-          <div className="flex flex-col gap-3">
+          {/* Physiological Stats Cards */}
+          <div className="flex flex-col gap-2.5">
             <h3 className="text-[10px] font-bold text-neutral-500 tracking-widest font-mono uppercase">PHYSIOLOGICAL PROFILE</h3>
             
-            {/* Recovery Ring Score */}
-            <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
+            {/* Recovery Score */}
+            <div className="rounded-2xl p-3.5 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <Sparkles className="w-4 h-4 animate-pulse" />
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Recovery Score</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">Optimal strain headroom</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">Optimal headroom</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-black font-mono text-emerald-400">{recoveryScore}%</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
-                  recoveryScore > 85 
-                    ? 'text-emerald-500 bg-emerald-500/10' 
-                    : recoveryScore > 60 
-                      ? 'text-amber-500 bg-amber-500/10' 
-                      : 'text-rose-500 bg-rose-500/10'
-                }`}>
-                  {recoveryScore > 85 ? 'PEAK' : recoveryScore > 60 ? 'LOADED' : 'REST'}
-                </span>
+                <span className="text-xl font-black font-mono text-emerald-400">{recoveryScore}%</span>
               </div>
             </div>
 
-            {/* Heart Rate */}
+            {/* Resting Heart Rate (lub-dub beat interactive) */}
             <div
               onClick={() => playHeartTone(restingHr)}
-              className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between cursor-pointer hover:bg-neutral-900/60 hover:border-neutral-800 transition-all group"
+              className="rounded-2xl p-3.5 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between cursor-pointer hover:bg-neutral-900/60 hover:border-neutral-800 transition-all group"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-105 transition-transform">
-                  <Heart className="w-4 h-4 animate-pulse text-rose-500" />
+                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-105 transition-transform">
+                  <Heart className="w-3.5 h-3.5 animate-pulse text-rose-500" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Resting HR</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">Last 7-day average (Click to hear)</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">Click to hear lub-dub</span>
                 </div>
               </div>
               <span className="text-lg font-bold font-mono text-neutral-200">{restingHr} <span className="text-[10px] text-neutral-500 font-normal">bpm</span></span>
             </div>
 
             {/* Sleep Performance */}
-            <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
+            <div className="rounded-2xl p-3.5 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                  <Moon className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  <Moon className="w-3.5 h-3.5" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Restorative Sleep</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">Deep + REM ratio high</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">Deep + REM ratio</span>
                 </div>
               </div>
               <span className="text-lg font-bold font-mono text-neutral-200">{sleepHours} <span className="text-[10px] text-neutral-500 font-normal">hrs</span></span>
             </div>
 
-            {/* Hydration Level */}
-            <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
+            {/* Hydration level */}
+            <div className="rounded-2xl p-3.5 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                  <Activity className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <Activity className="w-3.5 h-3.5" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Hydration Level</span>
@@ -420,7 +399,7 @@ export default function AthleteRecoveryDashboard() {
             </div>
           </div>
 
-          {/* Biomarker Stress Simulator */}
+          {/* Biomarker Stress Simulator panel */}
           <div className="flex flex-col gap-2.5 p-4 rounded-3xl bg-neutral-950/40 border border-neutral-900">
             <span className="text-[9px] font-bold text-neutral-500 tracking-widest font-mono uppercase">
               BIOMARKER STRESS SIMULATOR
@@ -490,213 +469,216 @@ export default function AthleteRecoveryDashboard() {
               </button>
             </div>
           </div>
-
-          {/* Quick Instructions / Info Banner */}
-          <div className="mt-auto p-4 rounded-2xl bg-neutral-950 border border-neutral-900 text-xs text-neutral-500 leading-relaxed relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-3 text-neutral-700">
-              <Info className="w-4 h-4" />
-            </div>
-            <p className="font-semibold text-neutral-400 mb-1">Elite Recovery Coaching</p>
-            Mention feeling sore, tight, or fatigued in specific muscle groups, or ask about training fuel models. The AI will immediately formulate and output dynamic, interactive sliders or mobility checksheets.
-          </div>
         </aside>
 
-        {/* Right Side Chat Stream - Col 8 */}
-        <main className="lg:col-span-8 flex flex-col h-full overflow-hidden bg-neutral-950/10">
+        {/* CENTER COLUMN: The Primary Analytics Cockpit (Col 5) */}
+        <main className="lg:col-span-5 border-r border-neutral-900/60 overflow-y-auto p-6 space-y-6">
           
-          {/* Scrollable Chat Area */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 pb-36">
-            {messages.length === 0 && !mockLoading ? (
-              /* Welcome screen for new chat */
-              <div className="max-w-md mx-auto text-center mt-12 animate-fadeIn">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 p-0.5 mx-auto mb-4">
-                  <div className="w-full h-full bg-neutral-950 rounded-[14px] flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-emerald-400" />
-                  </div>
-                </div>
-                <h3 className="text-lg font-bold text-neutral-200">Consult your Sports Scientist</h3>
-                <p className="text-xs text-neutral-500 mt-2 leading-relaxed max-w-sm mx-auto">
-                  Type a prompt below about your current athletic fatigue, muscle soreness, or nutrition ratio requirements.
-                </p>
+          {/* Cockpit Navigation Tabs */}
+          <div className="flex items-center justify-between pb-2 border-b border-neutral-900">
+            <h3 className="text-sm font-black tracking-wider uppercase bg-gradient-to-r from-neutral-100 to-neutral-400 bg-clip-text text-transparent">
+              ANALYTICS COCKPIT
+            </h3>
+            <div className="flex gap-1.5 bg-neutral-950 p-1 rounded-xl border border-neutral-900">
+              {(['recovery', 'fuel', 'cardio'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase rounded-lg transition-all ${
+                    activeTab === tab
+                      ? 'bg-emerald-500 text-neutral-950 font-black shadow-md'
+                      : 'text-neutral-500 hover:text-neutral-300'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                {/* Suggestions grid */}
-                <div className="mt-8 flex flex-col gap-2">
+          {/* Cockpit Pre-rendered interactive cards based on tabs */}
+          {activeTab === 'recovery' && (
+            <div className={`space-y-6 transition-all duration-300 ${
+              highlightWidget === 'mobility' ? 'ring-2 ring-cyan-500/50 rounded-3xl' : ''
+            }`}>
+              {/* Target check sheets with Body interactive SVG Heatmap */}
+              <MobilityMap
+                onToggleComplete={(muscleId: string, completed: boolean) => {
+                  setRecoveryScore((prev: number) => {
+                    const increment = completed ? 4 : -4;
+                    return Math.max(0, Math.min(100, prev + increment));
+                  });
+                  setIsSidebarGlowing(true);
+                  setTimeout(() => setIsSidebarGlowing(false), 850);
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 'fuel' && (
+            <div className="space-y-6 animate-fadeIn">
+              {/* Macro Fueling Ratio Slider */}
+              <div className={`transition-all duration-300 ${
+                highlightWidget === 'macros' ? 'ring-2 ring-emerald-500/50 rounded-3xl' : ''
+              }`}>
+                <MacroSlider />
+              </div>
+
+              {/* Fluid Rehydration Tuner */}
+              <div className={`transition-all duration-300 ${
+                highlightWidget === 'hydration' ? 'ring-2 ring-cyan-500/50 rounded-3xl' : ''
+              }`}>
+                <BioMetricsPanel
+                  onLogHydration={(oz: number) => {
+                    setHydrationLevel((prev: number) => Math.min(100, prev + 18));
+                    setRecoveryScore((prev: number) => Math.min(100, prev + 3));
+                    setIsSidebarGlowing(true);
+                    setTimeout(() => setIsSidebarGlowing(false), 850);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'cardio' && (
+            <div className={`space-y-6 animate-fadeIn transition-all duration-300 ${
+              highlightWidget === 'cardio' ? 'ring-2 ring-rose-500/50 rounded-3xl' : ''
+            }`}>
+              {/* EKG heart zone monitor */}
+              <HeartZones initialRestingHr={restingHr} />
+            </div>
+          )}
+
+        </main>
+
+        {/* RIGHT COLUMN: Vertically docked AI Recovery Assistant (Col 4) */}
+        <aside className="lg:col-span-4 flex flex-col h-full bg-neutral-950/20 overflow-hidden">
+          
+          {/* Assistant Header */}
+          <div className="p-4 px-6 border-b border-neutral-900 flex items-center justify-between shrink-0 bg-neutral-950/60 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-bold font-mono tracking-widest text-neutral-300 uppercase">
+                AI RECOVERY ASSISTANT
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[8px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider">
+              ONLINE
+            </div>
+          </div>
+
+          {/* Chat Stream (Scrollable) */}
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            {messages.length === 0 && !mockLoading ? (
+              /* Slim welcome cards inside chat sidebar */
+              <div className="space-y-4 animate-fadeIn">
+                <div className="p-4 rounded-2xl bg-neutral-950 border border-neutral-900 text-center">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-2 text-emerald-400">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                  <h4 className="text-xs font-bold text-neutral-200">Consult Olympic Coach</h4>
+                  <p className="text-[10px] text-neutral-500 leading-relaxed mt-1">
+                    Explain your workout strain, muscle soreness, or cardiovascular fatigue. The AI will immediately recalibrate your cockpit metrics.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-[8px] text-neutral-600 font-mono font-bold uppercase tracking-widest block ml-1">
+                    COACHING PRESETS
+                  </span>
                   {suggestions.map((suggestion, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleSuggestionClick(suggestion.prompt)}
-                      className="group w-full p-3 rounded-2xl bg-neutral-950 hover:bg-neutral-900/60 border border-neutral-900 hover:border-neutral-800 transition-all text-left text-xs flex justify-between items-center"
+                      className="group w-full p-2.5 rounded-xl bg-neutral-900/60 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 transition-all text-left text-[11px] flex justify-between items-center cursor-pointer"
                     >
-                      <span className="text-neutral-400 group-hover:text-neutral-200 transition-colors font-medium">
-                        "{suggestion.prompt}"
+                      <span className="text-neutral-400 group-hover:text-neutral-200 transition-colors font-medium truncate pr-2">
+                        {suggestion.label}
                       </span>
-                      <span className="text-[10px] font-bold text-neutral-600 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800/80 uppercase font-mono group-hover:text-emerald-400 group-hover:border-emerald-500/20 flex items-center gap-1">
-                        {suggestion.label} <ArrowUpRight className="w-2.5 h-2.5" />
-                      </span>
+                      <ArrowUpRight className="w-3 h-3 text-neutral-600 group-hover:text-emerald-400 transition-all shrink-0" />
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              /* Conversation messages stream */
-              <div className="space-y-6 max-w-2xl mx-auto">
+              /* Conversation elements inside chat sidebar */
+              <div className="space-y-5">
                 {messages.map((message: any) => {
                   const isUser = message.role === 'user';
                   return (
                     <div
                       key={message.id}
-                      className={`flex flex-col gap-2.5 animate-fadeIn ${
+                      className={`flex flex-col gap-1.5 animate-fadeIn ${
                         isUser ? 'items-end' : 'items-start'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-[9px] font-bold font-mono tracking-wider text-neutral-600 uppercase">
-                          {isUser ? 'Alexander Cole' : 'ELITE SCIENTIST'}
-                        </span>
-                      </div>
+                      <span className="text-[8px] font-bold font-mono tracking-wider text-neutral-600 uppercase">
+                        {isUser ? 'Alexander Cole' : 'ELITE COACH'}
+                      </span>
                       
-                      {/* Text Bubble */}
+                      {/* Slim sidebar chat bubble */}
                       <div
-                        className={`text-sm leading-relaxed p-4 rounded-3xl max-w-full ${
+                        className={`text-xs leading-relaxed p-3.5 rounded-2xl max-w-full ${
                           isUser
-                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-neutral-200 rounded-tr-none'
-                            : 'bg-neutral-900/60 border border-neutral-800 text-neutral-300 rounded-tl-none'
+                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-neutral-200 rounded-tr-none font-medium'
+                            : 'bg-neutral-900/60 border border-neutral-850 text-neutral-300 rounded-tl-none'
                         }`}
                       >
                         {message.content}
                       </div>
-
-                      {/* Tool Invocations Rendering */}
-                      {message.toolInvocations?.map((toolInvocation: any) => {
-                        const { toolName, toolCallId, args } = toolInvocation;
-
-                        if (toolName === 'suggest_macros') {
-                          return (
-                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
-                              <MacroSlider
-                                initialWeight={args.weight}
-                                initialTrainingLoad={args.trainingLoad}
-                                initialProteinRatio={args.proteinRatio}
-                              />
-                            </div>
-                          );
-                        }
-
-                        if (toolName === 'prescribe_mobility') {
-                          return (
-                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
-                              <MobilityMap
-                                initialMuscleGroups={args.muscleGroups}
-                                onToggleComplete={(muscleId: string, completed: boolean) => {
-                                  setRecoveryScore((prev: number) => {
-                                    const increment = completed ? 4 : -4;
-                                    return Math.max(0, Math.min(100, prev + increment));
-                                  });
-                                  setIsSidebarGlowing(true);
-                                  setTimeout(() => setIsSidebarGlowing(false), 800);
-                                }}
-                              />
-                            </div>
-                          );
-                        }
-
-                        if (toolName === 'calculate_hydration') {
-                          return (
-                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
-                              <BioMetricsPanel
-                                initialWorkoutDuration={args.durationMinutes}
-                                initialTemperature={args.ambientTemp}
-                                initialSweatRate={args.sweatRate}
-                                onLogHydration={(oz: number) => {
-                                  setHydrationLevel((prev: number) => Math.min(100, prev + 18));
-                                  setRecoveryScore((prev: number) => Math.min(100, prev + 3));
-                                  setIsSidebarGlowing(true);
-                                  setTimeout(() => setIsSidebarGlowing(false), 800);
-                                }}
-                              />
-                            </div>
-                          );
-                        }
-
-                        if (toolName === 'prescribe_aerobic_zones') {
-                          return (
-                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
-                              <HeartZones
-                                initialRestingHr={args.restingHr}
-                                initialAge={args.age}
-                                initialTrainingType={args.trainingType}
-                              />
-                            </div>
-                          );
-                        }
-
-                        return null;
-                      })}
                     </div>
                   );
                 })}
 
-                {/* Loading state indicator */}
+                {/* Thinking indicator inside chat sidebar */}
                 {mockLoading && (
-                  <div className="flex flex-col items-start gap-2.5 animate-pulse">
-                    <span className="text-[9px] font-bold font-mono tracking-wider text-neutral-600 uppercase">
-                      ELITE SCIENTIST IS ANALYZING...
+                  <div className="flex flex-col items-start gap-1.5 animate-pulse">
+                    <span className="text-[8px] font-bold font-mono tracking-wider text-neutral-600 uppercase">
+                      ANALYZING BIOMARKERS...
                     </span>
-                    <div className="h-10 w-48 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center gap-1.5 text-xs text-neutral-500">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce delay-150" />
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-bounce delay-300" />
+                    <div className="h-8 w-28 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center gap-1 text-[10px] text-neutral-500">
+                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce" />
+                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce delay-150" />
+                      <div className="w-1 h-1 rounded-full bg-emerald-500 animate-bounce delay-300" />
                     </div>
                   </div>
                 )}
-
                 <div ref={chatBottomRef} />
               </div>
             )}
           </div>
 
-          {/* Fixed Bottom Input Bar Area */}
-          <div className="absolute bottom-0 left-0 lg:left-[33.33%] right-0 p-6 bg-gradient-to-t from-[#050505] via-[#050505]/95 to-transparent border-t border-neutral-950">
-            <div className="max-w-2xl mx-auto">
-              {/* Form Input Container */}
-              <form onSubmit={handleFormSubmit} className="relative flex items-center group">
-                {/* Glow Backdrop */}
-                <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 opacity-20 blur-md group-focus-within:opacity-35 transition-opacity" />
-                
-                {/* Rounded Pill Input Box */}
-                <div className="relative flex-1 flex items-center bg-neutral-950/90 border border-neutral-800 rounded-full py-1.5 pl-5 pr-2 backdrop-blur-md">
-                  <input
-                    id="chat-input"
-                    type="text"
-                    value={input}
-                    onChange={handleInputChange}
-                    placeholder={
-                      useMock 
-                        ? "Demo mode active... Type something (e.g. 'Leg soreness')" 
-                        : "Ask about recovery soreness, training intensity, macros..."
-                    }
-                    className="flex-1 bg-transparent text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none pr-4 font-medium"
-                    autoComplete="off"
-                  />
-                  <button
-                    type="submit"
-                    className="p-3.5 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-neutral-950 shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </form>
-
-              {/* Technical Notice / Status */}
-              <div className="mt-2 text-center text-[10px] text-neutral-600 font-mono">
-                {useMock 
-                  ? "⚡ RUNNING IN OFFLINE DEMO MODE (IDEAL FOR DIRECT UI PREVIEW)"
-                  : "🌐 CONNECTED TO GROQ SPEEDWAY ROUTING · VERCEL AI SDK STREAM"}
+          {/* Chat Input Area (Fixed to the bottom of the chat sidebar) */}
+          <div className="p-4 bg-neutral-950/80 border-t border-neutral-900 shrink-0">
+            <form onSubmit={handleFormSubmit} className="relative flex items-center group">
+              <div className="absolute -inset-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 opacity-20 blur group-focus-within:opacity-35 transition-opacity" />
+              <div className="relative flex-1 flex items-center bg-neutral-950 border border-neutral-850 rounded-full py-1 pl-4 pr-1.5 backdrop-blur-md">
+                <input
+                  id="chat-input"
+                  type="text"
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder="Ask your coach..."
+                  className="flex-1 bg-transparent text-xs text-neutral-100 placeholder-neutral-500 focus:outline-none pr-3 font-semibold"
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  className="p-2.5 rounded-full bg-gradient-to-tr from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-neutral-950 shadow transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                </button>
               </div>
+            </form>
+            <div className="mt-2 text-center text-[8px] text-neutral-600 font-mono tracking-wider">
+              {useMock 
+                ? "⚡ OFFLINE COACH DIRECT MODULATION MODE"
+                : "🌐 LIVE CHAT STREAM · VERCEL AI SDK"}
             </div>
           </div>
 
-        </main>
+        </aside>
+
       </div>
     </div>
   );
