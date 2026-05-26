@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import MacroSlider from '@/components/recovery/MacroSlider';
 import MobilityMap from '@/components/recovery/MobilityMap';
+import BioMetricsPanel from '@/components/recovery/BioMetricsPanel';
 
 export default function AthleteRecoveryDashboard() {
   const [useMock, setUseMock] = useState(false);
@@ -51,8 +52,8 @@ export default function AthleteRecoveryDashboard() {
       prompt: "What is my optimal protein/carb macro ratio for an upcoming peak intensity training cycle? I weigh 82kg.",
     },
     {
-      label: "Calf Cramps",
-      prompt: "My calves are extremely tight and cramping after running sprint repeats. Suggest a fast mobility routine.",
+      label: "Hydration Plan",
+      prompt: "I just finished a 90 minute high sweat workout in 82 degree heat. Generate my hydration and sleep recovery metrics.",
     }
   ];
 
@@ -160,6 +161,25 @@ export default function AthleteRecoveryDashboard() {
                   durationMinutes: 10
                 }
               ]
+            },
+            result: { status: 'success' }
+          }
+        ]
+      };
+    } else if (promptText.toLowerCase().includes('hydration') || promptText.toLowerCase().includes('sweat') || promptText.toLowerCase().includes('heat')) {
+      assistantMessage = {
+        id: assistantMsgId,
+        role: 'assistant' as const,
+        content: "High ambient temperatures significantly accelerate sweat rate and sodium excretion in elite decathletes, leading to accelerated muscle fatigue and potential cramping. I have initialized the fluid and sleep calculation model below to optimize your biological rehydration and recovery window.",
+        toolInvocations: [
+          {
+            state: 'result' as const,
+            toolCallId: 'call-hyd-1',
+            toolName: 'calculate_hydration',
+            args: {
+              durationMinutes: 90,
+              ambientTemp: 82,
+              sweatRate: 'high'
             },
             result: { status: 'success' }
           }
@@ -413,6 +433,18 @@ export default function AthleteRecoveryDashboard() {
                             <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
                               <MobilityMap
                                 initialMuscleGroups={args.muscleGroups}
+                              />
+                            </div>
+                          );
+                        }
+
+                        if (toolName === 'calculate_hydration') {
+                          return (
+                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
+                              <BioMetricsPanel
+                                initialWorkoutDuration={args.durationMinutes}
+                                initialTemperature={args.ambientTemp}
+                                initialSweatRate={args.sweatRate}
                               />
                             </div>
                           );

@@ -52,6 +52,17 @@ Guidelines:
             return { ...args, success: true };
           },
         }),
+        calculate_hydration: (tool as any)({
+          description: 'Calculate and optimize hydration, sodium electrolytes, and sleep cycles based on workout duration, temperature, and sweat rate.',
+          parameters: z.object({
+            durationMinutes: z.number().min(30).max(180).describe('Total duration of the training session in minutes.'),
+            ambientTemp: z.number().min(50).max(110).describe('Ambient outdoor/indoor temperature in Fahrenheit.'),
+            sweatRate: z.enum(['low', 'moderate', 'high']).describe('Estimated sweat rate of the athlete.'),
+          }),
+          execute: async (args: any) => {
+            return { ...args, success: true };
+          },
+        }),
       } as any,
     });
 
