@@ -26,6 +26,13 @@ export default function AthleteRecoveryDashboard() {
   const [mockLoading, setMockLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // Shared state for interactive sidebar sync
+  const [recoveryScore, setRecoveryScore] = useState(88);
+  const [restingHr, setRestingHr] = useState(48);
+  const [sleepHours, setSleepHours] = useState(8.2);
+  const [hydrationLevel, setHydrationLevel] = useState(72);
+  const [isSidebarGlowing, setIsSidebarGlowing] = useState(false);
+
   // Set up Vercel AI SDK hook
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
     api: '/api/chat',
@@ -262,7 +269,9 @@ export default function AthleteRecoveryDashboard() {
       {/* Main Content Dashboard Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
         {/* Left Side Panel (Athlete profile and stats) - Col 4 */}
-        <aside className="lg:col-span-4 bg-neutral-950/20 border-r border-neutral-900/60 p-6 flex flex-col gap-6 overflow-y-auto hidden lg:flex">
+        <aside className={`lg:col-span-4 bg-neutral-950/20 border-r border-neutral-900/60 p-6 flex flex-col gap-6 overflow-y-auto hidden lg:flex transition-all duration-300 ${
+          isSidebarGlowing ? 'shadow-2xl shadow-cyan-500/15 border-r-cyan-500/30' : ''
+        }`}>
           {/* Athlete Profile Card */}
           <div className="rounded-3xl p-5 bg-gradient-to-br from-neutral-900 to-neutral-950 border border-neutral-800 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-colors" />
@@ -295,7 +304,7 @@ export default function AthleteRecoveryDashboard() {
             <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4 animate-pulse" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Recovery Score</span>
@@ -303,8 +312,16 @@ export default function AthleteRecoveryDashboard() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-2xl font-black font-mono text-emerald-400">88%</span>
-                <span className="text-[9px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-mono font-bold">PEAK</span>
+                <span className="text-2xl font-black font-mono text-emerald-400">{recoveryScore}%</span>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                  recoveryScore > 85 
+                    ? 'text-emerald-500 bg-emerald-500/10' 
+                    : recoveryScore > 60 
+                      ? 'text-amber-500 bg-amber-500/10' 
+                      : 'text-rose-500 bg-rose-500/10'
+                }`}>
+                  {recoveryScore > 85 ? 'PEAK' : recoveryScore > 60 ? 'LOADED' : 'REST'}
+                </span>
               </div>
             </div>
 
@@ -319,13 +336,13 @@ export default function AthleteRecoveryDashboard() {
                   <span className="text-[9px] text-neutral-500 font-mono">Last 7-day average</span>
                 </div>
               </div>
-              <span className="text-lg font-bold font-mono text-neutral-200">48 <span className="text-[10px] text-neutral-500 font-normal">bpm</span></span>
+              <span className="text-lg font-bold font-mono text-neutral-200">{restingHr} <span className="text-[10px] text-neutral-500 font-normal">bpm</span></span>
             </div>
 
             {/* Sleep Performance */}
             <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                   <Moon className="w-4 h-4" />
                 </div>
                 <div>
@@ -333,7 +350,76 @@ export default function AthleteRecoveryDashboard() {
                   <span className="text-[9px] text-neutral-500 font-mono">Deep + REM ratio high</span>
                 </div>
               </div>
-              <span className="text-lg font-bold font-mono text-neutral-200">8.2 <span className="text-[10px] text-neutral-500 font-normal">hrs</span></span>
+              <span className="text-lg font-bold font-mono text-neutral-200">{sleepHours} <span className="text-[10px] text-neutral-500 font-normal">hrs</span></span>
+            </div>
+
+            {/* Hydration Level */}
+            <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-neutral-300 block">Hydration Level</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">Dynamic fluid level</span>
+                </div>
+              </div>
+              <span className="text-lg font-bold font-mono text-cyan-300">{hydrationLevel}%</span>
+            </div>
+          </div>
+
+          {/* Biomarker Stress Simulator */}
+          <div className="flex flex-col gap-2.5 p-4 rounded-3xl bg-neutral-950/40 border border-neutral-900">
+            <span className="text-[9px] font-bold text-neutral-500 tracking-widest font-mono uppercase">
+              BIOMARKER STRESS SIMULATOR
+            </span>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryScore(65);
+                  setRestingHr(58);
+                  setHydrationLevel(48);
+                  setIsSidebarGlowing(true);
+                  handleSuggestionClick("I am feeling severe soreness in my quadriceps and moderate stiffness in my lower back after a heavy leg workout today.");
+                  setTimeout(() => setIsSidebarGlowing(false), 2000);
+                }}
+                className="w-full py-2 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-left text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer"
+              >
+                <span>🔴 POST-SQUAT FATIGUE</span>
+                <span className="text-[9px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded font-mono uppercase font-black">LEGS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryScore(70);
+                  setRestingHr(54);
+                  setHydrationLevel(35);
+                  setIsSidebarGlowing(true);
+                  handleSuggestionClick("I just finished a 90 minute high sweat workout in 82 degree heat. Generate my hydration and sleep recovery metrics.");
+                  setTimeout(() => setIsSidebarGlowing(false), 2000);
+                }}
+                className="w-full py-2 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-left text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer"
+              >
+                <span>🔵 DEHYDRATED HEATRUN</span>
+                <span className="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded font-mono uppercase font-black">FLUIDS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryScore(96);
+                  setRestingHr(43);
+                  setHydrationLevel(98);
+                  setIsSidebarGlowing(true);
+                  setTimeout(() => setIsSidebarGlowing(false), 2000);
+                }}
+                className="w-full py-2 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-left text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer"
+              >
+                <span>🟢 PEAK RECOVERED</span>
+                <span className="text-[9px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-mono uppercase font-black">READY</span>
+              </button>
             </div>
           </div>
 
@@ -433,6 +519,14 @@ export default function AthleteRecoveryDashboard() {
                             <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
                               <MobilityMap
                                 initialMuscleGroups={args.muscleGroups}
+                                onToggleComplete={(muscleId: string, completed: boolean) => {
+                                  setRecoveryScore((prev: number) => {
+                                    const increment = completed ? 4 : -4;
+                                    return Math.max(0, Math.min(100, prev + increment));
+                                  });
+                                  setIsSidebarGlowing(true);
+                                  setTimeout(() => setIsSidebarGlowing(false), 800);
+                                }}
                               />
                             </div>
                           );
@@ -445,6 +539,12 @@ export default function AthleteRecoveryDashboard() {
                                 initialWorkoutDuration={args.durationMinutes}
                                 initialTemperature={args.ambientTemp}
                                 initialSweatRate={args.sweatRate}
+                                onLogHydration={(oz: number) => {
+                                  setHydrationLevel((prev: number) => Math.min(100, prev + 18));
+                                  setRecoveryScore((prev: number) => Math.min(100, prev + 3));
+                                  setIsSidebarGlowing(true);
+                                  setTimeout(() => setIsSidebarGlowing(false), 800);
+                                }}
                               />
                             </div>
                           );

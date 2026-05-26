@@ -15,6 +15,7 @@ interface MuscleGroup {
 
 interface MobilityMapProps {
   initialMuscleGroups?: MuscleGroup[];
+  onToggleComplete?: (id: string, completed: boolean) => void;
 }
 
 export default function MobilityMap({
@@ -47,13 +48,23 @@ export default function MobilityMap({
       completed: false,
     },
   ],
+  onToggleComplete,
 }: MobilityMapProps) {
   const [muscles, setMuscles] = useState<MuscleGroup[]>(initialMuscleGroups);
   const [selectedId, setSelectedId] = useState<string>(initialMuscleGroups[0]?.id || '');
 
   const handleToggleComplete = (id: string) => {
     setMuscles(prev =>
-      prev.map(m => (m.id === id ? { ...m, completed: !m.completed } : m))
+      prev.map(m => {
+        if (m.id === id) {
+          const nextCompleted = !m.completed;
+          if (onToggleComplete) {
+            onToggleComplete(id, nextCompleted);
+          }
+          return { ...m, completed: nextCompleted };
+        }
+        return m;
+      })
     );
   };
 

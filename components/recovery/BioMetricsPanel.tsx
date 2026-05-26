@@ -7,12 +7,14 @@ interface BioMetricsPanelProps {
   initialWorkoutDuration?: number; // minutes
   initialTemperature?: number; // Fahrenheit
   initialSweatRate?: 'low' | 'moderate' | 'high';
+  onLogHydration?: (oz: number) => void;
 }
 
 export default function BioMetricsPanel({
   initialWorkoutDuration = 90,
   initialTemperature = 75,
   initialSweatRate = 'moderate',
+  onLogHydration,
 }: BioMetricsPanelProps) {
   const [duration, setDuration] = useState(initialWorkoutDuration);
   const [temp, setTemp] = useState(initialTemperature);
@@ -136,6 +138,16 @@ export default function BioMetricsPanel({
             <span className="text-[10px] text-cyan-500/80 font-mono font-medium block mt-2">
               (Electrolyte Ratio: ~500mg/L)
             </span>
+            <button
+              onClick={() => {
+                if (onLogHydration) {
+                  onLogHydration(totalFluidOz);
+                }
+              }}
+              className="mt-3 w-full py-1.5 rounded-xl bg-cyan-500 text-neutral-950 font-bold hover:bg-cyan-400 transition-colors text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-cyan-500/10 cursor-pointer"
+            >
+              Log Fluid Intake
+            </button>
           </div>
         </div>
 
