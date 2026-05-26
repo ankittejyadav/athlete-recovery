@@ -63,6 +63,17 @@ Guidelines:
             return { ...args, success: true };
           },
         }),
+        prescribe_aerobic_zones: (tool as any)({
+          description: 'Prescribe optimal cardiovascular recovery zones and training limits using resting heart rate, age, and decathlon load targets.',
+          parameters: z.object({
+            restingHr: z.number().min(35).max(110).describe('Baseline resting heart rate of the athlete.'),
+            age: z.number().min(14).max(95).describe('Age of the athlete to calculate Karvonen reserves.'),
+            trainingType: z.enum(['aerobic', 'anaerobic', 'recovery']).describe('Focus type of target cardiac training.'),
+          }),
+          execute: async (args: any) => {
+            return { ...args, success: true };
+          },
+        }),
       } as any,
     });
 

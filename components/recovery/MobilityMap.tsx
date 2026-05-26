@@ -52,6 +52,7 @@ export default function MobilityMap({
 }: MobilityMapProps) {
   const [muscles, setMuscles] = useState<MuscleGroup[]>(initialMuscleGroups);
   const [selectedId, setSelectedId] = useState<string>(initialMuscleGroups[0]?.id || '');
+  const [orientation, setOrientation] = useState<'front' | 'back'>('front');
 
   const handleToggleComplete = (id: string) => {
     setMuscles(prev =>
@@ -120,70 +121,117 @@ export default function MobilityMap({
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
         {/* Left Side: Body Interactive SVG Visualization (Col 5) */}
-        <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-neutral-950/60 rounded-2xl border border-neutral-900 relative min-h-[220px]">
-          {/* Simple Vector Athlete Body Representation with target dots */}
-          <svg className="w-24 h-48 opacity-65 text-neutral-600" viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M50 15C53.3137 15 56 12.3137 56 9C56 5.68629 53.3137 3 50 3C46.6863 3 44 5.68629 44 9C44 12.3137 46.6863 15 50 15Z"
-              stroke="currentColor" strokeWidth="2.5"
-            />
-            {/* Torso & Arms */}
-            <path
-              d="M32 30H68L64 75L50 82L36 75L32 30Z"
-              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-            />
-            <path d="M32 30L22 65L18 85" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M68 30L78 65L82 85" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-            {/* Legs */}
-            <path d="M37 80L33 130L30 185L22 190" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M63 80L67 130L70 185L78 190" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+        <div className="md:col-span-5 flex flex-col items-center justify-center p-4 bg-neutral-950/60 rounded-2xl border border-neutral-900 relative min-h-[240px]">
+          {/* Orientation Toggle Switch */}
+          <div className="absolute top-2 left-2 right-2 grid grid-cols-2 gap-1 bg-neutral-900 p-0.5 rounded-lg border border-neutral-850 z-10 text-[9px] font-bold font-mono">
+            <button
+              type="button"
+              onClick={() => setOrientation('front')}
+              className={`py-0.5 rounded transition-all ${
+                orientation === 'front' ? 'bg-cyan-500 text-neutral-950 font-black' : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              FRONT VIEW
+            </button>
+            <button
+              type="button"
+              onClick={() => setOrientation('back')}
+              className={`py-0.5 rounded transition-all ${
+                orientation === 'back' ? 'bg-cyan-500 text-neutral-950 font-black' : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              BACK VIEW
+            </button>
+          </div>
 
-          {/* Absolute Soreness Targets on SVG */}
-          {/* Lower Back */}
-          <button
-            onClick={() => setSelectedId('lower-back')}
-            className={`absolute top-[48%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-              selectedId === 'lower-back' ? 'scale-125' : 'hover:scale-110'
-            }`}
-          >
-            <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'lower-back')?.soreness || 'mild').dot}`} />
-            <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'lower-back')?.soreness || 'mild').dot}`} />
-          </button>
+          {/* Body SVG Vector mapping */}
+          {orientation === 'front' ? (
+            /* Front anatomical SVG */
+            <svg className="w-24 h-48 mt-4 opacity-65 text-neutral-600 animate-fadeIn" viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="18" r="8" stroke="currentColor" strokeWidth="2.2" />
+              <path d="M35 32H65L61 74L50 82L39 74L35 32Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+              {/* Chest & Abs mapping lines */}
+              <path d="M40 42H60" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+              <path d="M45 52H55" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+              <path d="M45 60H55" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+              <path d="M35 32L24 64L19 86" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M65 32L76 64L81 86" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              {/* Front Legs */}
+              <path d="M40 82L36 130L33 185L25 190" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+              <path d="M60 82L64 130L67 185L75 190" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            /* Back anatomical SVG */
+            <svg className="w-24 h-48 mt-4 opacity-65 text-neutral-600 animate-fadeIn" viewBox="0 0 100 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="18" r="8" stroke="currentColor" strokeWidth="2.2" />
+              {/* Spinal Column line */}
+              <path d="M50 26V82" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.5" />
+              <path d="M35 32H65L61 74L50 82L39 74L35 32Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+              {/* Scapula curves */}
+              <path d="M38 40C42 42 45 42 48 40" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+              <path d="M62 40C58 42 55 42 52 40" stroke="currentColor" strokeWidth="1.2" opacity="0.3" />
+              <path d="M35 32L24 64L19 86" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M65 32L76 64L81 86" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              {/* Back Legs (Glutes and calves highlighted) */}
+              <path d="M40 82L36 130L33 185L25 190" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+              <path d="M60 82L64 130L67 185L75 190" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
+            </svg>
+          )}
 
-          {/* Quads */}
-          <button
-            onClick={() => setSelectedId('quads')}
-            className={`absolute top-[62%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-8 h-4 flex justify-between px-1 transition-all ${
-              selectedId === 'quads' ? 'scale-125' : 'hover:scale-110'
-            }`}
-          >
-            <div className="relative w-3.5 h-3.5">
-              <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
-              <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
-            </div>
-            <div className="relative w-3.5 h-3.5">
-              <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
-              <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
-            </div>
-          </button>
+          {/* Absolute Soreness Targets on SVG based on orientation */}
+          {orientation === 'front' ? (
+            <>
+              {/* Quads (Front view target) */}
+              <button
+                type="button"
+                onClick={() => setSelectedId('quads')}
+                className={`absolute top-[65%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-8 h-4 flex justify-between px-1 transition-all ${
+                  selectedId === 'quads' ? 'scale-125' : 'hover:scale-110'
+                }`}
+              >
+                <div className="relative w-3.5 h-3.5">
+                  <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
+                </div>
+                <div className="relative w-3.5 h-3.5">
+                  <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'quads')?.soreness || 'mild').dot}`} />
+                </div>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Lower Back (Back view target) */}
+              <button
+                type="button"
+                onClick={() => setSelectedId('lower-back')}
+                className={`absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
+                  selectedId === 'lower-back' ? 'scale-125' : 'hover:scale-110'
+                }`}
+              >
+                <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'lower-back')?.soreness || 'mild').dot}`} />
+                <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'lower-back')?.soreness || 'mild').dot}`} />
+              </button>
 
-          {/* Calves */}
-          <button
-            onClick={() => setSelectedId('calves')}
-            className={`absolute top-[78%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-8 h-4 flex justify-between px-1 transition-all ${
-              selectedId === 'calves' ? 'scale-125' : 'hover:scale-110'
-            }`}
-          >
-            <div className="relative w-3.5 h-3.5">
-              <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
-              <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
-            </div>
-            <div className="relative w-3.5 h-3.5">
-              <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
-              <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
-            </div>
-          </button>
+              {/* Calves (Back view target) */}
+              <button
+                type="button"
+                onClick={() => setSelectedId('calves')}
+                className={`absolute top-[78%] left-[50%] -translate-x-1/2 -translate-y-1/2 w-8 h-4 flex justify-between px-1 transition-all ${
+                  selectedId === 'calves' ? 'scale-125' : 'hover:scale-110'
+                }`}
+              >
+                <div className="relative w-3.5 h-3.5">
+                  <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
+                </div>
+                <div className="relative w-3.5 h-3.5">
+                  <span className={`absolute w-3.5 h-3.5 rounded-full opacity-75 animate-ping ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
+                  <span className={`w-2.5 h-2.5 rounded-full border border-neutral-950 ${getSorenessColor(muscles.find(m => m.id === 'calves')?.soreness || 'mild').dot}`} />
+                </div>
+              </button>
+            </>
+          )}
 
           <span className="absolute bottom-2 text-[8px] font-mono text-neutral-600">INTERACTIVE HEATMAP</span>
         </div>

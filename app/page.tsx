@@ -20,6 +20,7 @@ import {
 import MacroSlider from '@/components/recovery/MacroSlider';
 import MobilityMap from '@/components/recovery/MobilityMap';
 import BioMetricsPanel from '@/components/recovery/BioMetricsPanel';
+import HeartZones from '@/components/recovery/HeartZones';
 
 export default function AthleteRecoveryDashboard() {
   const [useMock, setUseMock] = useState(false);
@@ -32,6 +33,35 @@ export default function AthleteRecoveryDashboard() {
   const [sleepHours, setSleepHours] = useState(8.2);
   const [hydrationLevel, setHydrationLevel] = useState(72);
   const [isSidebarGlowing, setIsSidebarGlowing] = useState(false);
+
+  const playHeartTone = (restingBpm = 48) => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      const playBeat = (time: number, freq: number, dur: number) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, time);
+        
+        gain.gain.setValueAtTime(0.001, time);
+        gain.gain.exponentialRampToValueAtTime(0.12, time + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+        
+        osc.start(time);
+        osc.stop(time + dur);
+      };
+
+      const now = audioCtx.currentTime;
+      playBeat(now, 55, 0.12); // Lub
+      playBeat(now + 0.15, 50, 0.15); // Dub
+    } catch (e) {
+      console.warn('Audio synthesis failed:', e);
+    }
+  };
 
   // Set up Vercel AI SDK hook
   const { messages, input, handleInputChange, handleSubmit, setMessages } = useChat({
@@ -55,12 +85,12 @@ export default function AthleteRecoveryDashboard() {
       prompt: "I am feeling severe soreness in my quadriceps and moderate stiffness in my lower back after a heavy leg workout today.",
     },
     {
-      label: "Carb Load Plan",
-      prompt: "What is my optimal protein/carb macro ratio for an upcoming peak intensity training cycle? I weigh 82kg.",
-    },
-    {
       label: "Hydration Plan",
       prompt: "I just finished a 90 minute high sweat workout in 82 degree heat. Generate my hydration and sleep recovery metrics.",
+    },
+    {
+      label: "Cardio Zones",
+      prompt: "What are my optimal aerobic heart rate recovery zones for Zone 1 and Zone 2? My resting HR is 48.",
     }
   ];
 
@@ -187,6 +217,25 @@ export default function AthleteRecoveryDashboard() {
               durationMinutes: 90,
               ambientTemp: 82,
               sweatRate: 'high'
+            },
+            result: { status: 'success' }
+          }
+        ]
+      };
+    } else if (promptText.toLowerCase().includes('cardio') || promptText.toLowerCase().includes('heart') || promptText.toLowerCase().includes('zone')) {
+      assistantMessage = {
+        id: assistantMsgId,
+        role: 'assistant' as const,
+        content: "I have calculated your target metabolic heart rate training zones based on your baseline resting heart rate of 48. Targeting Zone 1 (Active Recovery) and Zone 2 (Aerobic Endurance) will accelerate lactate clearance, stimulate parasympathetic nervous activation, and speed up glycogen restoration.",
+        toolInvocations: [
+          {
+            state: 'result' as const,
+            toolCallId: 'call-hrz-1',
+            toolName: 'prescribe_aerobic_zones',
+            args: {
+              restingHr: 48,
+              age: 24,
+              trainingType: 'recovery'
             },
             result: { status: 'success' }
           }
@@ -326,14 +375,17 @@ export default function AthleteRecoveryDashboard() {
             </div>
 
             {/* Heart Rate */}
-            <div className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between">
+            <div
+              onClick={() => playHeartTone(restingHr)}
+              className="rounded-3xl p-4 bg-neutral-950/50 border border-neutral-900 flex items-center justify-between cursor-pointer hover:bg-neutral-900/60 hover:border-neutral-800 transition-all group"
+            >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                  <Heart className="w-4 h-4 animate-pulse" />
+                <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:scale-105 transition-transform">
+                  <Heart className="w-4 h-4 animate-pulse text-rose-500" />
                 </div>
                 <div>
                   <span className="text-xs font-bold text-neutral-300 block">Resting HR</span>
-                  <span className="text-[9px] text-neutral-500 font-mono">Last 7-day average</span>
+                  <span className="text-[9px] text-neutral-500 font-mono">Last 7-day average (Click to hear)</span>
                 </div>
               </div>
               <span className="text-lg font-bold font-mono text-neutral-200">{restingHr} <span className="text-[10px] text-neutral-500 font-normal">bpm</span></span>
@@ -404,6 +456,22 @@ export default function AthleteRecoveryDashboard() {
               >
                 <span>🔵 DEHYDRATED HEATRUN</span>
                 <span className="text-[9px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded font-mono uppercase font-black">FLUIDS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setRecoveryScore(80);
+                  setRestingHr(48);
+                  setHydrationLevel(85);
+                  setIsSidebarGlowing(true);
+                  handleSuggestionClick("What are my optimal aerobic heart rate recovery zones for Zone 1 and Zone 2? My resting HR is 48.");
+                  setTimeout(() => setIsSidebarGlowing(false), 2000);
+                }}
+                className="w-full py-2 px-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-left text-[11px] font-bold transition-all flex items-center justify-between cursor-pointer"
+              >
+                <span>💓 CARDIO RECOVERY</span>
+                <span className="text-[9px] text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded font-mono uppercase font-black">EKG</span>
               </button>
 
               <button
@@ -545,6 +613,18 @@ export default function AthleteRecoveryDashboard() {
                                   setIsSidebarGlowing(true);
                                   setTimeout(() => setIsSidebarGlowing(false), 800);
                                 }}
+                              />
+                            </div>
+                          );
+                        }
+
+                        if (toolName === 'prescribe_aerobic_zones') {
+                          return (
+                            <div key={toolCallId} className="w-full mt-2 animate-fadeIn">
+                              <HeartZones
+                                initialRestingHr={args.restingHr}
+                                initialAge={args.age}
+                                initialTrainingType={args.trainingType}
                               />
                             </div>
                           );
